@@ -1,0 +1,108 @@
+{
+  "dataset": "Crédito público agropecuario por rubro, provincia y cantón desde el año 2013 (MAG)",
+  "total_registros": 298865,
+  "campos": [
+    "id",
+    "fecha",
+    "periodo",
+    "anio",
+    "mes",
+    "codProvincia",
+    "provincia",
+    "canton",
+    "sector",
+    "subsector",
+    "productoOriginal",
+    "producto",
+    "genero",
+    "institucion",
+    "valorUsd",
+    "numOperaciones"
+  ],
+  "archivos": [
+    {
+      "anio": 2013,
+      "archivo": "por_anio/credito_agropecuario_2013.json",
+      "registros": 22273,
+      "tamano_mb": 7.45
+    },
+    {
+      "anio": 2014,
+      "archivo": "por_anio/credito_agropecuario_2014.json",
+      "registros": 19447,
+      "tamano_mb": 6.5
+    },
+    {
+      "anio": 2015,
+      "archivo": "por_anio/credito_agropecuario_2015.json",
+      "registros": 20537,
+      "tamano_mb": 6.86
+    },
+    {
+      "anio": 2016,
+      "archivo": "por_anio/credito_agropecuario_2016.json",
+      "registros": 21169,
+      "tamano_mb": 7.07
+    },
+    {
+      "anio": 2017,
+      "archivo": "por_anio/credito_agropecuario_2017.json",
+      "registros": 26090,
+      "tamano_mb": 8.74
+    },
+    {
+      "anio": 2018,
+      "archivo": "por_anio/credito_agropecuario_2018.json",
+      "registros": 26209,
+      "tamano_mb": 8.79
+    },
+    {
+      "anio": 2019,
+      "archivo": "por_anio/credito_agropecuario_2019.json",
+      "registros": 23659,
+      "tamano_mb": 7.94
+    },
+    {
+      "anio": 2020,
+      "archivo": "por_anio/credito_agropecuario_2020.json",
+      "registros": 15456,
+      "tamano_mb": 5.16
+    },
+    {
+      "anio": 2021,
+      "archivo": "por_anio/credito_agropecuario_2021.json",
+      "registros": 20293,
+      "tamano_mb": 6.75
+    },
+    {
+      "anio": 2022,
+      "archivo": "por_anio/credito_agropecuario_2022.json",
+      "registros": 27117,
+      "tamano_mb": 9.18
+    },
+    {
+      "anio": 2023,
+      "archivo": "por_anio/credito_agropecuario_2023.json",
+      "registros": 24027,
+      "tamano_mb": 8.04
+    },
+    {
+      "anio": 2024,
+      "archivo": "por_anio/credito_agropecuario_2024.json",
+      "registros": 19277,
+      "tamano_mb": 6.43
+    },
+    {
+      "anio": 2025,
+      "archivo": "por_anio/credito_agropecuario_2025.json",
+      "registros": 21363,
+      "tamano_mb": 7.14
+    },
+    {
+      "anio": 2026,
+      "archivo": "por_anio/credito_agropecuario_2026.json",
+      "registros": 11948,
+      "tamano_mb": 4.05
+    }
+  ]
+}

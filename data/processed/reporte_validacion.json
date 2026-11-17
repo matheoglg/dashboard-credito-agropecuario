@@ -1,0 +1,70 @@
+{
+  "archivo_entrada": "mag_creditopublicoagropecuario_2026octubre.csv",
+  "codificacion": "utf-8-sig",
+  "separador": ";",
+  "registros_csv": 298865,
+  "columnas_csv": [
+    "CP_ANIO",
+    "CP_MES",
+    "DPA_DESPRO",
+    "DPA_PROVIN",
+    "DPA_DESCAN",
+    "CP_SECTOR",
+    "CP_SUBSECTOR",
+    "CP_PRODUCTO_ORIGINAL",
+    "CP_PRODUCTO_HOMOLOGADO",
+    "CP_GENERO",
+    "CP_NUM_OPERACIONES",
+    "CP_VALOR_USD",
+    "CP_INSTITUCION"
+  ],
+  "columnas_no_usadas": [],
+  "registros_json": 298865,
+  "registros_descartados": 0,
+  "motivos_descarte": {},
+  "ejemplos_descarte": [],
+  "valores_faltantes_por_columna": {
+    "CP_GENERO": 565
+  },
+  "valores_no_convertibles_por_columna": {},
+  "celdas_con_espacios_corregidas": {
+    "CP_PRODUCTO_ORIGINAL": 26
+  },
+  "categorias_unificadas": {
+    "productoOriginal": {
+      "Cacao, Movilizacion": "Cacao, Movilización",
+      "Construccion Y Mejoramiento De Infraestructura De Riego": "Construcción Y Mejoramiento De Infraestructura De Riego",
+      "Suplementacion Alimenticia": "Suplementación Alimenticia"
+    }
+  },
+  "registros_duplicados_exactos": 0,
+  "tratamiento": {
+    "categoricas_vacias": "se reemplazan por \"NO REGISTRADO\"",
+    "numOperaciones_vacio": "queda como null y el registro se conserva",
+    "anio_mes_valor_vacios_o_invalidos": "el registro se descarta",
+    "negativos": "el registro se descarta"
+  },
+  "validacion_json": {
+    "estado": "OK",
+    "errores": [],
+    "registros_validados": 298865,
+    "rango_fechas": [
+      "2013-01-01",
+      "2026-09-01"
+    ],
+    "monto_total_usd": 425924231.97,
+    "operaciones_totales": 975126,
+    "valores_distintos": {
+      "provincia": 24,
+      "canton": 221,
+      "sector": 5,
+      "subsector": 18,
+      "producto": 339,
+      "genero": 5,
+      "institucion": 2
+    },
+    "archivos_json": 14,
+    "tamano_total_mb": 100.1,
+    "archivo_mas_grande_mb": 9.18
+  }
+}
