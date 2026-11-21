@@ -31,6 +31,7 @@ Dashboard para monitorear el crédito público agropecuario otorgado en Ecuador 
 │       └── reporte_validacion.json                               # resultados de la limpieza y validación
 ├── scripts/
 │   └── transformar_csv_json.py                              # script de transformación
+├── dashboard/                                               # aplicación React (Sprint 2)
 └── README.md
 ```
 
@@ -116,3 +117,21 @@ Dashboard para monitorear el crédito público agropecuario otorgado en Ecuador 
 ```
 
 Los valores reales de cada ejecución están en `data/processed/muestra_credito_agropecuario.json` y `data/processed/reporte_validacion.json`.
+
+## Sprint 2: Componentes e interfaces React
+
+La interfaz del dashboard está en la carpeta [`dashboard/`](dashboard). Se creó con Vite, React y TypeScript, y usa Material UI para los componentes y el diseño responsivo.
+
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+
+Los componentes siguen el árbol definido en la fase de planificación: `DashboardPage` guarda el estado con `useState` (filtros, búsqueda, página y sección activa) y envía los datos por props a `Header`, `FilterBar`, `KpiGrid`, los gráficos y la tabla. Por ahora se usan datos de ejemplo sacados de los JSON del Sprint 1; en el siguiente sprint se leerán desde Firebase.
+
+Más detalles en [`dashboard/README.md`](dashboard/README.md).
+
+| Escritorio | Móvil |
+|---|---|
+| ![Escritorio](dashboard/docs/capturas/escritorio.png) | ![Móvil](dashboard/docs/capturas/movil.png) |
