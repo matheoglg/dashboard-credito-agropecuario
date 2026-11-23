@@ -1,7 +1,6 @@
-// Cálculos a partir de los datos de ejemplo. DashboardPage los usa para preparar
-// la información que reciben los componentes por props.
-import { RESUMENES, PROVINCIAS } from '../data/mockData';
-import type { Categoria, Kpi, PuntoMensual, Resumen } from '../types';
+// Cálculos a partir de los resúmenes leídos desde Firebase (/resumenes).
+// DashboardPage los usa para preparar la información que reciben los componentes por props.
+import type { Categoria, DatosResumen, Kpi, PuntoMensual, Resumen } from '../types';
 
 export const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -15,8 +14,8 @@ export const COLORES_SECTOR: Record<string, string> = {
 
 const VACIO: Resumen = { monto: 0, operaciones: 0, montoMujeres: 0, mensual: Array(12).fill(0), sectores: {} };
 
-export function getResumen(anio: number, provincia: string | null): Resumen {
-  return RESUMENES[`${anio}|${provincia ?? 'Todas'}`] ?? VACIO;
+export function getResumen(datos: DatosResumen | null, anio: number, provincia: string | null): Resumen {
+  return datos?.porAnio?.[String(anio)]?.[provincia ?? 'Todas'] ?? VACIO;
 }
 
 const variacion = (actual: number, anterior: number) => (anterior > 0 ? ((actual - anterior) / anterior) * 100 : null);
@@ -45,13 +44,16 @@ export function serieMensual(actual: Resumen, anterior: Resumen): PuntoMensual[]
 }
 
 export function distribucionSectores(resumen: Resumen): Categoria[] {
-  return Object.entries(resumen.sectores)
+  // Firebase no guarda objetos vacíos, por eso se usa ?? {}
+  return Object.entries(resumen.sectores ?? {})
     .map(([name, value]) => ({ name, value, color: COLORES_SECTOR[name] ?? '#A9B3AE' }))
     .sort((a, b) => b.value - a.value);
 }
 
-export function rankingProvincias(anio: number): Categoria[] {
-  return PROVINCIAS.map((name) => ({ name, value: getResumen(anio, name).monto }))
+export function rankingProvincias(datos: DatosResumen | null, anio: number): Categoria[] {
+  const provincias = datos?.catalogos.provincias ?? [];
+  return provincias
+    .map((name) => ({ name, value: getResumen(datos, anio, name).monto }))
     .filter((p) => p.value > 0)
     .sort((a, b) => b.value - a.value);
 }

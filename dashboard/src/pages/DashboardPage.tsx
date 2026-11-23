@@ -22,20 +22,20 @@ import { DataTable } from '../components/table/DataTable';
 import type { Columna } from '../components/table/DataTable';
 import { RecordCardList } from '../components/table/RecordCardList';
 
+import { DataStatus } from '../components/common/DataStatus';
+
 import { useBreakpoint } from '../hooks/useBreakpoint';
-import { ANIOS_DISPONIBLES, PROVINCIAS, REGISTROS, SECTORES } from '../data/mockData';
+import { useResumenes } from '../hooks/useResumenes';
+import { useRegistros } from '../hooks/useRegistros';
+import { LIMITE_REGISTROS } from '../services/creditoService';
 import { buildKpis, COLORES_SECTOR, distribucionSectores, getResumen, rankingProvincias, serieMensual } from '../utils/aggregate';
 import { formatCurrency, formatNumber, formatPercent } from '../utils/format';
 import type { Filtros, Registro } from '../types';
 
-const FILTROS_INICIALES: Filtros = { anio: ANIOS_DISPONIBLES[0], provincia: null, sector: null };
+// 2025 es el último año completo del dataset (2026 llega hasta septiembre).
+const FILTROS_INICIALES: Filtros = { anio: 2025, provincia: null, sector: null };
 const POR_PAGINA = { desktop: 8, tablet: 8, mobile: 4 };
-
-const OPCIONES: OpcionesFiltro = {
-  anios: ANIOS_DISPONIBLES.map((a) => ({ value: String(a), label: String(a) })),
-  provincias: PROVINCIAS.map((p) => ({ value: p, label: p })),
-  sectores: SECTORES.map((s) => ({ value: s, label: s })),
-};
+const aOpciones = (valores: (string | number)[]) => valores.map((v) => ({ value: String(v), label: String(v) }));
 
 const COLUMNAS: Columna<Registro>[] = [
   { key: 'periodo', header: 'Período' },
@@ -66,7 +66,8 @@ function exportarCsv(registros: Registro[]) {
 }
 
 /**
- * Componente contenedor: guarda el estado (filtros, búsqueda, página y sección activa),
+ * Componente contenedor: obtiene los datos de Firebase con los hooks useResumenes y useRegistros,
+ * guarda el estado de la interfaz (filtros, búsqueda, página y sección activa),
  * calcula los datos y los reparte por props a los componentes de presentación.
  */
 export function DashboardPage() {
@@ -77,6 +78,10 @@ export function DashboardPage() {
   const [busqueda, setBusqueda] = useState('');
   const [pagina, setPagina] = useState(0);
   const [seccion, setSeccion] = useState('inicio');
+
+  // Datos desde Firebase Realtime Database.
+  const { datos, cargando: cargandoResumen, error: errorResumen } = useResumenes();
+  const { registros: registrosAnio, cargando: cargandoRegistros, error: errorRegistros } = useRegistros(filtros.anio, filtros.provincia);
 
   // Cada vez que cambia un filtro o la búsqueda se vuelve a la primera página.
   const cambiarFiltro = (clave: keyof Filtros, valor: string | null) => {
@@ -98,24 +103,29 @@ export function DashboardPage() {
     else document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Datos derivados del estado: se recalculan solo cuando cambian los filtros.
-  const actual = useMemo(() => getResumen(filtros.anio, filtros.provincia), [filtros.anio, filtros.provincia]);
-  const anterior = useMemo(() => getResumen(filtros.anio - 1, filtros.provincia), [filtros.anio, filtros.provincia]);
+  // Datos derivados: se recalculan cuando llegan datos de Firebase o cambian los filtros.
+  const opciones = useMemo<OpcionesFiltro>(
+    () => ({
+      anios: aOpciones(datos?.catalogos.anios ?? [FILTROS_INICIALES.anio]),
+      provincias: aOpciones(datos?.catalogos.provincias ?? []),
+      sectores: aOpciones(datos?.catalogos.sectores ?? []),
+    }),
+    [datos],
+  );
+  const actual = useMemo(() => getResumen(datos, filtros.anio, filtros.provincia), [datos, filtros.anio, filtros.provincia]);
+  const anterior = useMemo(() => getResumen(datos, filtros.anio - 1, filtros.provincia), [datos, filtros.anio, filtros.provincia]);
   const kpis = useMemo(() => buildKpis(actual, anterior, filtros.anio - 1), [actual, anterior, filtros.anio]);
   const serie = useMemo(() => serieMensual(actual, anterior), [actual, anterior]);
   const sectores = useMemo(() => distribucionSectores(actual), [actual]);
-  const ranking = useMemo(() => rankingProvincias(filtros.anio), [filtros.anio]);
+  const ranking = useMemo(() => rankingProvincias(datos, filtros.anio), [datos, filtros.anio]);
 
+  // El año y la provincia ya se filtraron en la consulta a Firebase; sector y búsqueda se aplican aquí.
   const registros = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
-    return REGISTROS.filter(
-      (r) =>
-        r.anio === filtros.anio &&
-        (!filtros.provincia || r.provincia === filtros.provincia) &&
-        (!filtros.sector || r.sector === filtros.sector) &&
-        (!texto || `${r.canton} ${r.producto}`.toLowerCase().includes(texto)),
+    return registrosAnio.filter(
+      (r) => (!filtros.sector || r.sector === filtros.sector) && (!texto || `${r.canton} ${r.producto}`.toLowerCase().includes(texto)),
     );
-  }, [filtros, busqueda]);
+  }, [registrosAnio, filtros.sector, busqueda]);
 
   const porPagina = POR_PAGINA[breakpoint];
   const paginaActual = registros.slice(pagina * porPagina, (pagina + 1) * porPagina);
@@ -123,6 +133,11 @@ export function DashboardPage() {
   const total = sectores.reduce((s, c) => s + c.value, 0);
 
   const buscador = <SearchInput value={busqueda} onChange={buscar} placeholder="Buscar cantón o producto…" />;
+  const anios = datos?.catalogos.anios ?? [];
+  const rango = anios.length ? ` (${Math.min(...anios)} – ${Math.max(...anios)})` : '';
+  const subtituloTabla = filtros.provincia
+    ? `Registros de ${filtros.provincia} en ${filtros.anio}, ordenados por monto`
+    : `Los ${LIMITE_REGISTROS} registros de mayor monto de ${filtros.anio}`;
 
   return (
     <DashboardLayout
@@ -130,8 +145,8 @@ export function DashboardPage() {
       header={
         <Header
           title="Crédito público agropecuario"
-          subtitle="Monitoreo de créditos otorgados por provincia, cantón, sector e institución (2013 – 2026)"
-          source="MAG · Datos Abiertos Ecuador"
+          subtitle={`Monitoreo de créditos otorgados por provincia, cantón, sector e institución${rango}`}
+          source="MAG · Datos Abiertos Ecuador · Firebase"
           cutoffDate="octubre 2026"
           onExport={() => exportarCsv(registros)}
           compact={isMobile}
@@ -140,83 +155,94 @@ export function DashboardPage() {
       bottomNav={<BottomNav items={NAV} activeId={seccion} onNavigate={navegar} />}
     >
       <Box id="filtros" sx={{ scrollMarginTop: 80 }}>
-        <FilterBar filters={filtros} options={OPCIONES} onFilterChange={cambiarFiltro} onClear={limpiarFiltros} variant={isMobile ? 'chips' : 'bar'} />
+        <FilterBar filters={filtros} options={opciones} onFilterChange={cambiarFiltro} onClear={limpiarFiltros} variant={isMobile ? 'chips' : 'bar'} />
       </Box>
 
-      <KpiGrid items={kpis} columns={breakpoint === 'desktop' ? 4 : 2} compact={isMobile} />
+      <DataStatus cargando={cargandoResumen} error={errorResumen} minHeight={320}>
+        <KpiGrid items={kpis} columns={breakpoint === 'desktop' ? 4 : 2} compact={isMobile} />
 
-      <Grid container spacing={isMobile ? 2 : 3} id="graficos" sx={{ scrollMarginTop: 80 }}>
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Panel
-            title="Evolución mensual del monto otorgado"
-            subtitle={`USD · ${lugar} · ${filtros.anio} frente a ${filtros.anio - 1}`}
-            actions={
-              <ChartLegend
-                items={[
-                  { label: String(filtros.anio), color: '#1E6B47' },
-                  { label: String(filtros.anio - 1), color: '#A9B3AE', dashed: true },
-                ]}
-              />
-            }
-          >
-            <LineChartTrend
-              data={serie}
-              series={[
-                { key: 'actual', label: String(filtros.anio), color: '#1E6B47' },
-                { key: 'anterior', label: String(filtros.anio - 1), color: '#A9B3AE', dashed: true },
-              ]}
-              valueFormatter={formatCurrency}
-              height={isMobile ? 220 : 300}
-              shortLabels={isMobile}
-            />
-          </Panel>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <Panel title="Distribución por sector productivo" subtitle={`% del monto otorgado · ${lugar} · ${filtros.anio}`}>
-            <Stack direction={{ xs: 'column', sm: 'row', md: 'column', xl: 'row' }} spacing={2.5} sx={{ alignItems: 'center' }}>
-              <DonutChart
-                data={sectores}
-                centerValue={formatCurrency(total)}
-                centerLabel={`Total ${filtros.anio}`}
-                size={isMobile ? 180 : 210}
-                onSliceClick={(s) => cambiarFiltro('sector', s)}
-              />
-              <Box sx={{ width: '100%' }}>
+        <Grid container spacing={isMobile ? 2 : 3} id="graficos" sx={{ scrollMarginTop: 80 }}>
+          <Grid size={{ xs: 12, lg: 8 }}>
+            <Panel
+              title="Evolución mensual del monto otorgado"
+              subtitle={`USD · ${lugar} · ${filtros.anio} frente a ${filtros.anio - 1}`}
+              actions={
                 <ChartLegend
-                  direction="column"
-                  items={sectores.map((s) => ({ label: s.name, color: s.color ?? '#A9B3AE', value: formatPercent(total ? (s.value / total) * 100 : 0) }))}
+                  items={[
+                    { label: String(filtros.anio), color: '#1E6B47' },
+                    { label: String(filtros.anio - 1), color: '#A9B3AE', dashed: true },
+                  ]}
                 />
-              </Box>
-            </Stack>
-          </Panel>
-        </Grid>
+              }
+            >
+              <LineChartTrend
+                data={serie}
+                series={[
+                  { key: 'actual', label: String(filtros.anio), color: '#1E6B47' },
+                  { key: 'anterior', label: String(filtros.anio - 1), color: '#A9B3AE', dashed: true },
+                ]}
+                valueFormatter={formatCurrency}
+                height={isMobile ? 220 : 300}
+                shortLabels={isMobile}
+              />
+            </Panel>
+          </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <Panel title="Provincias con mayor monto" subtitle={`Top ${isMobile ? 5 : 8} · USD · ${filtros.anio}`}>
-            <BarRanking
-              data={ranking}
-              limit={isMobile ? 5 : 8}
-              highlight={filtros.provincia}
-              valueFormatter={formatCurrency}
-              onBarClick={(p) => cambiarFiltro('provincia', p === filtros.provincia ? null : p)}
-            />
-          </Panel>
-        </Grid>
-
-        <Grid size={{ xs: 12, lg: 8 }} id="registros" sx={{ scrollMarginTop: 80 }}>
-          <Panel title="Detalle de registros" subtitle="Registros de mayor monto por provincia" actions={isMobile ? undefined : buscador}>
-            {isMobile ? (
-              <Stack spacing={1.5}>
-                {buscador}
-                <RecordCardList records={paginaActual} page={pagina} pageCount={Math.ceil(registros.length / porPagina)} onPageChange={setPagina} />
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <Panel title="Distribución por sector productivo" subtitle={`% del monto otorgado · ${lugar} · ${filtros.anio}`}>
+              <Stack direction={{ xs: 'column', sm: 'row', md: 'column', xl: 'row' }} spacing={2.5} sx={{ alignItems: 'center' }}>
+                <DonutChart
+                  data={sectores}
+                  centerValue={formatCurrency(total)}
+                  centerLabel={`Total ${filtros.anio}`}
+                  size={isMobile ? 180 : 210}
+                  onSliceClick={(s) => cambiarFiltro('sector', s)}
+                />
+                <Box sx={{ width: '100%' }}>
+                  <ChartLegend
+                    direction="column"
+                    items={sectores.map((s) => ({ label: s.name, color: s.color ?? '#A9B3AE', value: formatPercent(total ? (s.value / total) * 100 : 0) }))}
+                  />
+                </Box>
               </Stack>
-            ) : (
-              <DataTable columns={COLUMNAS} rows={paginaActual} totalItems={registros.length} page={pagina} rowsPerPage={porPagina} onPageChange={setPagina} />
-            )}
-          </Panel>
+            </Panel>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <Panel title="Provincias con mayor monto" subtitle={`Top ${isMobile ? 5 : 8} · USD · ${filtros.anio}`}>
+              <BarRanking
+                data={ranking}
+                limit={isMobile ? 5 : 8}
+                highlight={filtros.provincia}
+                valueFormatter={formatCurrency}
+                onBarClick={(p) => cambiarFiltro('provincia', p === filtros.provincia ? null : p)}
+              />
+            </Panel>
+          </Grid>
+
+          <Grid size={{ xs: 12, lg: 8 }} id="registros" sx={{ scrollMarginTop: 80 }}>
+            <Panel title="Detalle de registros" subtitle={subtituloTabla} actions={isMobile ? undefined : buscador}>
+              <DataStatus cargando={cargandoRegistros} error={errorRegistros} mensajeCarga="Consultando registros en Firebase…">
+                {isMobile ? (
+                  <Stack spacing={1.5}>
+                    {buscador}
+                    <RecordCardList records={paginaActual} page={pagina} pageCount={Math.ceil(registros.length / porPagina)} onPageChange={setPagina} />
+                  </Stack>
+                ) : (
+                  <DataTable
+                    columns={COLUMNAS}
+                    rows={paginaActual}
+                    totalItems={registros.length}
+                    page={pagina}
+                    rowsPerPage={porPagina}
+                    onPageChange={setPagina}
+                  />
+                )}
+              </DataStatus>
+            </Panel>
+          </Grid>
         </Grid>
-      </Grid>
+      </DataStatus>
     </DashboardLayout>
   );
 }
