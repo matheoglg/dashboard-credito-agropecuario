@@ -5,14 +5,14 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBtEj04SHcW7ei0F1WapYlg1lDaUBVuENU",
-  authDomain: "dashboard-credito-agropecuario.firebaseapp.com",
+  apiKey: 'AIzaSyBtEj04SHcW7ei0F1WapYlg1lDaUBVuENU',
+  authDomain: 'dashboard-credito-agropecuario.firebaseapp.com',
   // Importante: sin databaseURL la app no encuentra la base de datos.
   databaseURL: 'https://dashboard-credito-agropecuario-default-rtdb.firebaseio.com/',
-  projectId: "dashboard-credito-agropecuario",
-  storageBucket: "dashboard-credito-agropecuario.firebasestorage.app",
-  messagingSenderId: "1083761789538",
-  appId: "1:1083761789538:web:c4f8a1b376209ee083df3b"
+  projectId: 'dashboard-credito-agropecuario',
+  storageBucket: 'dashboard-credito-agropecuario.firebasestorage.app',
+  messagingSenderId: '1083761789538',
+  appId: '1:1083761789538:web:c4f8a1b376209ee083df3b',
 };
 
 export const app = initializeApp(firebaseConfig);
