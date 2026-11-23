@@ -30,7 +30,13 @@ Dashboard para monitorear el crédito público agropecuario otorgado en Ecuador 
 │       ├── muestra_credito_agropecuario.json                     # primeros 5 registros con formato legible
 │       └── reporte_validacion.json                               # resultados de la limpieza y validación
 ├── scripts/
-│   └── transformar_csv_json.py                              # script de transformación
+│   ├── transformar_csv_json.py                              # script de transformación
+│   └── generar_resumenes.py                                 # resúmenes para Firebase (Sprint 3)
+│   └── firebase/
+│       └── resumenes.json                                    # totales por año y provincia para Firebase
+├── firebase/
+│   ├── database.rules.json                                   # reglas de Realtime Database
+│   └── estructura_inicial.json                               # nodos vacíos para importar los datos
 ├── dashboard/                                               # aplicación React (Sprint 2)
 └── README.md
 ```
@@ -135,3 +141,31 @@ Más detalles en [`dashboard/README.md`](dashboard/README.md).
 | Escritorio | Móvil |
 |---|---|
 | ![Escritorio](dashboard/docs/capturas/escritorio.png) | ![Móvil](dashboard/docs/capturas/movil.png) |
+
+## Sprint 3: Conexión de React con Firebase
+
+Los datos se almacenan en **Firebase Realtime Database** y la aplicación React los consulta con el SDK de Firebase.
+
+### Estructura de la base de datos
+
+```
+/
+├── registros/
+│   ├── 2013/   ← data/processed/por_anio/credito_agropecuario_2013.json
+│   ├── ...
+│   └── 2026/   ← data/processed/por_anio/credito_agropecuario_2026.json
+└── resumenes/  ← data/firebase/resumenes.json
+    ├── catalogos/   (años, provincias y sectores para los filtros)
+    └── porAnio/{año}/{provincia | "Todas"}/   (monto, operaciones, montoMujeres, mensual[12], sectores)
+```
+
+Los 298 865 registros pesan unos 100 MB, así que la aplicación no los descarga completos: los KPI y gráficos salen de `/resumenes` (≈150 KB) y la tabla consulta solo los registros que necesita.
+
+### Cómo cargar los datos
+
+1. Generar los resúmenes: `python scripts/generar_resumenes.py`.
+2. En la consola de Firebase (Realtime Database → Datos), importar primero `firebase/estructura_inicial.json` en la raíz: crea los nodos vacíos `/registros/2013` … `/registros/2026` y `/resumenes`.
+3. Entrar a cada nodo e importar ahí su archivo: `credito_agropecuario_AAAA.json` en `/registros/AAAA` y `resumenes.json` en `/resumenes`. Después del paso 2 no se vuelve a importar en la raíz: la importación reemplaza todo lo que hay en esa ruta.
+4. Copiar el contenido de `firebase/database.rules.json` en la pestaña **Reglas** y publicar. Las reglas permiten solo lectura de `registros` y `resumenes` y crean los índices `valorUsd` y `provincia`.
+
+La configuración de React con Firebase y los hooks con `useEffect` y `useState` se explican en [`dashboard/README.md`](dashboard/README.md#datos-desde-firebase).

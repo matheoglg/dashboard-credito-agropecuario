@@ -1,12 +1,13 @@
 # Dashboard – Crédito Público Agropecuario (React + Vite + TypeScript + Material UI)
 
-Interfaz del dashboard desarrollada en el **Sprint 2**. Muestra indicadores, gráficos y una tabla de registros del crédito público agropecuario del MAG, con datos de ejemplo tomados de los JSON generados en el Sprint 1.
+Interfaz del dashboard del crédito público agropecuario del MAG. Los componentes se desarrollaron en el **Sprint 2** y desde el **Sprint 3** los datos se leen de **Firebase Realtime Database**.
 
 ## Tecnologías
 
 - React 19 + TypeScript, creado con Vite (`create-vite@9.3.4`, plantilla `react-ts`)
 - Material UI 9 (`@mui/material`, `@mui/icons-material`) y MUI X Charts (`@mui/x-charts`)
 - Fuente Inter (`@fontsource/inter`)
+- Firebase JS SDK 13 (`firebase`) para leer Realtime Database
 
 ## Cómo ejecutar
 
@@ -27,12 +28,16 @@ src/
 ├── main.tsx                 # Punto de entrada: ThemeProvider + CssBaseline
 ├── App.tsx                  # Monta DashboardPage
 ├── theme.ts                 # Colores, tipografía y breakpoints (móvil < 768 px, escritorio ≥ 1280 px)
-├── types/index.ts           # Tipos compartidos: Registro, Resumen, Filtros, Kpi, Opcion…
-├── data/mockData.ts         # Datos de ejemplo (agregados por año y provincia del Sprint 1)
+├── types/index.ts           # Tipos compartidos: Registro, Resumen, DatosResumen, Filtros, Kpi…
+├── firebase/firebase.ts     # Configuración e inicialización de Firebase (exporta db)
+├── services/creditoService.ts  # Consultas a Realtime Database (get, query, orderByChild…)
 ├── utils/
 │   ├── format.ts            # Formato de montos, números y porcentajes (es-EC)
 │   └── aggregate.ts         # Cálculo de KPI, serie mensual, sectores y ranking
-├── hooks/useBreakpoint.ts   # mobile | tablet | desktop con useMediaQuery
+├── hooks/
+│   ├── useResumenes.ts      # useEffect + useState: lee /resumenes al cargar la página
+│   ├── useRegistros.ts      # useEffect + useState: lee /registros/{año} al cambiar año o provincia
+│   └── useBreakpoint.ts     # mobile | tablet | desktop con useMediaQuery
 ├── pages/DashboardPage.tsx  # Contenedor: estado con useState y reparto de props
 └── components/
     ├── layout/              # Header, DashboardLayout, BottomNav
@@ -40,8 +45,21 @@ src/
     ├── kpi/                 # KpiCard, KpiGrid
     ├── charts/              # LineChartTrend, DonutChart, BarRanking
     ├── table/               # DataTable, SearchInput, RecordCard, RecordCardList
-    └── common/              # Panel, Badge, ChartLegend
+    └── common/              # Panel, Badge, ChartLegend, DataStatus (carga y error)
 ```
+
+## Datos desde Firebase
+
+| Nodo | Contenido | Quién lo usa |
+|---|---|---|
+| `/resumenes` | Totales por año y provincia y listas para los filtros (generado con `scripts/generar_resumenes.py`) | `useResumenes` → KPI, gráficos y filtros |
+| `/registros/{año}` | Los registros del JSON del Sprint 1, un nodo por año | `useRegistros` → tabla de detalle |
+
+- Sin provincia seleccionada se piden los 200 registros de mayor monto del año (`orderByChild('valorUsd')` + `limitToLast(200)`).
+- Con provincia se piden todos los registros de esa provincia en el año (`orderByChild('provincia')` + `equalTo(provincia)`).
+- Mientras llega la respuesta se muestra un indicador de carga y, si Firebase responde con error, un aviso (componente `DataStatus`).
+
+La configuración del proyecto de Firebase está en `src/firebase/firebase.ts`. Las reglas de la base de datos están en `../firebase/database.rules.json`.
 
 ## Interacción con useState
 
