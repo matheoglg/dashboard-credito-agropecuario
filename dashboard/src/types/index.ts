@@ -60,3 +60,17 @@ export interface Categoria {
   value: number;
   color?: string;
 }
+
+/** Listas para los filtros, guardadas en /resumenes/catalogos. */
+export interface Catalogos {
+  anios: number[];
+  provincias: string[];
+  sectores: string[];
+  totalRegistros: number;
+}
+
+/** Contenido del nodo /resumenes de Firebase. porAnio["2025"]["Guayas"] = totales de Guayas en 2025. */
+export interface DatosResumen {
+  catalogos: Catalogos;
+  porAnio: Record<string, Record<string, Resumen>>;
+}
