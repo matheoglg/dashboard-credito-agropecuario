@@ -5,6 +5,8 @@ Integrantes: Mathias Giler e Ivan Alvarado.
 
 Dashboard para monitorear el crédito público agropecuario otorgado en Ecuador por provincia, cantón, sector e institución, a partir de los datos abiertos del Ministerio de Agricultura y Ganadería (MAG).
 
+**Sitio publicado:** https://matheoglg.github.io/dashboard-credito-agropecuario/
+
 ## Sprint 1: Transformación de datos CSV a JSON
 
 ### Fuente de datos
@@ -169,3 +171,11 @@ Los 298 865 registros pesan unos 100 MB, así que la aplicación no los descarga
 4. Copiar el contenido de `firebase/database.rules.json` en la pestaña **Reglas** y publicar. Las reglas permiten solo lectura de `registros` y `resumenes` y crean los índices `valorUsd` y `provincia`.
 
 La configuración de React con Firebase y los hooks con `useEffect` y `useState` se explican en [`dashboard/README.md`](dashboard/README.md#datos-desde-firebase).
+
+## Despliegue en GitHub Pages
+
+El dashboard se publica automáticamente en **https://matheoglg.github.io/dashboard-credito-agropecuario/**.
+
+- El workflow `.github/workflows/deploy.yml` se ejecuta en cada push a `main`: instala las dependencias de `dashboard/`, compila con `npm run build` y publica la carpeta `dashboard/dist`.
+- En `dashboard/vite.config.ts` se define `base: '/dashboard-credito-agropecuario/'`, porque GitHub Pages sirve el sitio dentro de una carpeta con el nombre del repositorio.
+- El estado de cada despliegue se ve en la pestaña **Actions** del repositorio.
