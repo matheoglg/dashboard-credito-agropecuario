@@ -12,14 +12,12 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  # 1. Compila la app de React que está en la carpeta dashboard/
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     defaults:
       run:
         working-directory: dashboard
@@ -36,5 +34,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dashboard/dist
+
+  # 2. Publica en GitHub Pages lo que compiló el job anterior
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
